@@ -1,7 +1,8 @@
 import axios from 'axios';
 
 const axiosInstance = axios.create({
-  baseURL: 'https://ctlfx-admin-pannel.onrender.com/api', // Update this to your backend URL
+  // baseURL: 'https://ctlfx-admin-pannel.onrender.com/api', // Update this to your backend URL
+  baseURL: " http://localhost:3000/api"
   // timeout: 10000,
 });
 
