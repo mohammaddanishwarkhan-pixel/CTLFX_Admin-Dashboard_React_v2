@@ -3,6 +3,7 @@ import { Form, Input, Button, Card, message, Typography } from 'antd';
 import { UserOutlined, LockOutlined } from '@ant-design/icons';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { getErrorMessage } from '@/utils/error';
 
 const { Title, Text } = Typography;
 
@@ -14,13 +15,15 @@ const Login: React.FC = () => {
   const onFinish = async (values: { email: string; password: string }) => {
     setLoading(true);
     try {
-      await login(values);
+      await login({
+        ...values,
+        platform: 'web'
+      });
       message.success('Login successful!');
       navigate('/dashboard');
     } catch (error: any) {
       console.error('Login error:', error);
-      const errorMessage = error?.response?.data?.message || error?.message || 'Login failed. Please try again.';
-      message.error(errorMessage);
+      message.error(getErrorMessage(error));
     } finally {
       setLoading(false);
     }

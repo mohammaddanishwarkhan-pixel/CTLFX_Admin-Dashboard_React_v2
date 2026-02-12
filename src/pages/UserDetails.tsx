@@ -8,6 +8,7 @@ import { getPaymentsByUserId } from '@/api/payments';
 
 
 import { getProfileByUserId, createProfile, updateProfile } from '@/api/profiles';
+import { getErrorMessage } from '@/utils/error';
 import dayjs from 'dayjs';
 
 const UserDetails: React.FC = () => {
@@ -18,6 +19,7 @@ const UserDetails: React.FC = () => {
   const [userLoading, setUserLoading] = useState(true);
   const [profileLoading, setProfileLoading] = useState(false);
   const [paymentsLoading, setPaymentsLoading] = useState(false);
+  const [actionLoading, setActionLoading] = useState(false);
 
 
 
@@ -43,7 +45,7 @@ const UserDetails: React.FC = () => {
       const userData = await getUserById(userId);
       setUser(userData);
     } catch (error) {
-      message.error('Failed to fetch user details');
+      message.error(getErrorMessage(error));
     } finally {
       setUserLoading(false);
     }
@@ -80,7 +82,7 @@ const UserDetails: React.FC = () => {
       setPayments(data);
       setPaymentParams(prev => ({ ...prev, total }));
     } catch (error) {
-      message.error('Failed to fetch payments');
+      message.error(getErrorMessage(error));
     } finally {
       setPaymentsLoading(false);
     }
@@ -110,6 +112,7 @@ const UserDetails: React.FC = () => {
 
   const handleSubmitProfile = async () => {
     if (!userId) return;
+    setActionLoading(true);
     try {
       const values = await form.validateFields();
       if (profile) {
@@ -122,7 +125,9 @@ const UserDetails: React.FC = () => {
       setIsProfileModalVisible(false);
       fetchProfile();
     } catch (error) {
-      message.error('Failed to save profile');
+      message.error(getErrorMessage(error));
+    } finally {
+      setActionLoading(false);
     }
   };
 
@@ -258,6 +263,7 @@ const UserDetails: React.FC = () => {
         title={profile ? 'Edit Profile' : 'Create Profile'}
         open={isProfileModalVisible}
         onOk={handleSubmitProfile}
+        confirmLoading={actionLoading}
         onCancel={() => setIsProfileModalVisible(false)}
       >
         <Form form={form} layout="vertical">

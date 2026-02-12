@@ -4,6 +4,7 @@ import { SearchOutlined, PlusOutlined, EditOutlined, DeleteOutlined } from '@ant
 import { Payment } from '@/types';
 import { getPayments, createPayment, updatePayment, deletePayment } from '@/api/payments';
 import { getAllUsers } from '@/api/users';
+import { getErrorMessage } from '@/utils/error';
 
 import dayjs from 'dayjs';
 
@@ -16,6 +17,7 @@ const Payments: React.FC = () => {
   const [userLoading, setUserLoading] = useState(false);
 
   const [loading, setLoading] = useState(false);
+  const [actionLoading, setActionLoading] = useState(false);
   const [searchText, setSearchText] = useState('');
   const [debouncedSearchText, setDebouncedSearchText] = useState('');
   const [pagination, setPagination] = useState({ current: 1, pageSize: 10, total: 0 });
@@ -48,7 +50,7 @@ const Payments: React.FC = () => {
       setPagination(prev => ({ ...prev, total }));
     } catch (error) {
       console.error(error);
-      message.error('Failed to fetch payments');
+      message.error(getErrorMessage(error));
     } finally {
       setLoading(false);
     }
@@ -119,16 +121,20 @@ const Payments: React.FC = () => {
   };
 
   const handleDelete = async (id: number) => {
+    setActionLoading(true);
     try {
       await deletePayment(id);
       message.success('Payment deleted successfully');
       fetchPayments();
     } catch (error) {
-      message.error('Failed to delete payment');
+      message.error(getErrorMessage(error));
+    } finally {
+      setActionLoading(false);
     }
   };
 
   const handleSubmit = async () => {
+    setActionLoading(true);
     try {
       const values = await form.validateFields();
       const paymentData = {
@@ -146,7 +152,9 @@ const Payments: React.FC = () => {
       setIsModalVisible(false);
       fetchPayments();
     } catch (error) {
-      message.error('Failed to save payment');
+      message.error(getErrorMessage(error));
+    } finally {
+      setActionLoading(false);
     }
   };
 
@@ -196,7 +204,7 @@ const Payments: React.FC = () => {
       key: 'actions',
       render: (_: any, record: Payment) => (
         <Space>
-          <Button type="link" icon={<EditOutlined />} onClick={() => handleEdit(record)}>
+          <Button type="link" icon={<EditOutlined />} onClick={() => handleEdit(record)} disabled={actionLoading}>
             Edit
           </Button>
           <Popconfirm
@@ -205,7 +213,7 @@ const Payments: React.FC = () => {
             okText="Yes"
             cancelText="No"
           >
-            <Button type="link" danger icon={<DeleteOutlined />}>
+            <Button type="link" danger icon={<DeleteOutlined />} loading={actionLoading} disabled={actionLoading}>
               Delete
             </Button>
           </Popconfirm>
@@ -228,7 +236,7 @@ const Payments: React.FC = () => {
             onChange={(e) => setSearchText(e.target.value)}
             style={{ width: 250 }}
           />
-          <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd}>
+          <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd} disabled={actionLoading}>
             Add Payment
           </Button>
         </Space>
@@ -255,6 +263,7 @@ const Payments: React.FC = () => {
         title={editingPayment ? 'Edit Payment' : 'Add Payment'}
         open={isModalVisible}
         onOk={handleSubmit}
+        confirmLoading={actionLoading}
         onCancel={() => setIsModalVisible(false)}
         width={600}
       >

@@ -3,12 +3,14 @@ import { Table, Button, Input, Space, Tag, Modal, Form, message, Popconfirm } fr
 import { SearchOutlined, PlusOutlined, EditOutlined, DeleteOutlined, EyeOutlined, UndoOutlined } from '@ant-design/icons';
 import { User } from '@/types';
 import { getAllUsers, createUser, updateUser, deleteUser, restoreUser } from '@/api/users';
+import { getErrorMessage } from '@/utils/error';
 import { useNavigate } from 'react-router-dom';
 import dayjs from 'dayjs';
 
 const Users: React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(false);
+  const [actionLoading, setActionLoading] = useState(false);
   const [searchText, setSearchText] = useState('');
   const [debouncedSearchText, setDebouncedSearchText] = useState('');
   const [pagination, setPagination] = useState({ current: 1, pageSize: 10, total: 0 });
@@ -42,7 +44,7 @@ const Users: React.FC = () => {
       setPagination(prev => ({ ...prev, total }));
     } catch (error) {
       console.error(error);
-      message.error('Failed to fetch users');
+      message.error(getErrorMessage(error));
     } finally {
       setLoading(false);
     }
@@ -65,26 +67,33 @@ const Users: React.FC = () => {
   };
 
   const handleDelete = async (id: number) => {
+    setActionLoading(true);
     try {
       await deleteUser(id);
       message.success('User deleted successfully');
       fetchUsers();
     } catch (error) {
-      message.error('Failed to delete user');
+      message.error(getErrorMessage(error));
+    } finally {
+      setActionLoading(false);
     }
   };
 
   const handleRestore = async (id: number) => {
+    setActionLoading(true);
     try {
       await restoreUser(id);
       message.success('User restored successfully');
       fetchUsers();
     } catch (error) {
-      message.error('Failed to restore user');
+      message.error(getErrorMessage(error));
+    } finally {
+      setActionLoading(false);
     }
   };
 
   const handleSubmit = async () => {
+    setActionLoading(true);
     try {
       const values = await form.validateFields();
       if (editingUser) {
@@ -101,7 +110,9 @@ const Users: React.FC = () => {
       setIsModalVisible(false);
       fetchUsers();
     } catch (error) {
-      message.error('Failed to save user');
+      message.error(getErrorMessage(error));
+    } finally {
+      setActionLoading(false);
     }
   };
 
@@ -151,12 +162,13 @@ const Users: React.FC = () => {
             type="link"
             icon={<EyeOutlined />}
             onClick={() => navigate(`/users/${record.id}`)}
+            disabled={actionLoading}
           >
             View
           </Button>
           {!record.isDeleted && (
             <>
-              <Button type="link" icon={<EditOutlined />} onClick={() => handleEdit(record)}>
+              <Button type="link" icon={<EditOutlined />} onClick={() => handleEdit(record)} disabled={actionLoading}>
                 Edit
               </Button>
               <Popconfirm
@@ -165,7 +177,7 @@ const Users: React.FC = () => {
                 okText="Yes"
                 cancelText="No"
               >
-                <Button type="link" danger icon={<DeleteOutlined />}>
+                <Button type="link" danger icon={<DeleteOutlined />} loading={actionLoading} disabled={actionLoading}>
                   Delete
                 </Button>
               </Popconfirm>
@@ -178,7 +190,7 @@ const Users: React.FC = () => {
               okText="Yes"
               cancelText="No"
             >
-              <Button type="link" icon={<UndoOutlined />}>
+              <Button type="link" icon={<UndoOutlined />} loading={actionLoading} disabled={actionLoading}>
                 Restore
               </Button>
             </Popconfirm>
@@ -200,7 +212,7 @@ const Users: React.FC = () => {
             onChange={(e) => setSearchText(e.target.value)}
             style={{ width: 250 }}
           />
-          <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd}>
+          <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd} disabled={actionLoading}>
             Add User
           </Button>
         </Space>
@@ -227,6 +239,7 @@ const Users: React.FC = () => {
         title={editingUser ? 'Edit User' : 'Add User'}
         open={isModalVisible}
         onOk={handleSubmit}
+        confirmLoading={actionLoading}
         onCancel={() => setIsModalVisible(false)}
         width={600}
       >
